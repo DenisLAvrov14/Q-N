@@ -1,37 +1,28 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Expo / Metro кэши
+.expo-shared/
+.cache/
 
-# dependencies
-node_modules/
+# Логи
+pnpm-debug.log*
+*.log
+logs/
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+# IDE/OS мусор
+.vscode/
+.idea/
+Thumbs.db
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Env
+.env
+.env.*
+!.env.example
 
-# Metro
-.metro-health-check*
+# Если делаете prebuild — игнорьте нативные каталоги (уберите из игнора, если будете коммитить нативный код)
+android/
+ios/
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
+# Directus (Docker volumes)
+cms/uploads/
+cms/database/
+cms/*.db
+cms/*.sqlite
