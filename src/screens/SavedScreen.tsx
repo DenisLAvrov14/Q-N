@@ -1,89 +1,53 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+// src/screens/Saved.tsx
+import React, { useRef, useState, useEffect } from 'react';
 import {
-  SafeAreaView,
-  View,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-  Dimensions,
+  SafeAreaView, View, FlatList, RefreshControl, ActivityIndicator,
+  Text, StyleSheet, Dimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store/useStore';
-import QCard from '../components/QCard';
 import { useThemeColors } from '../theme';
+import QCard from '../components/QCard';
 import type { Article } from '../types';
 import { SkeletonCard } from '../components/Skeleton';
-import { fetchArticlesByIds } from '../api';
+import { useSaved } from '../hooks/useSaved';
 
 const { height: WIN_H } = Dimensions.get('window');
 
 export default function SavedScreen({ navigation }: any) {
   const c = useThemeColors();
-  const savedIds = useStore((s) => s.savedIds);
+  const savedIds   = useStore((s) => s.savedIds);
   const toggleSaved = useStore((s) => s.toggleSaved);
+  const rv          = useStore((s) => s.reloadVersion);
 
-  const [items, setItems] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [containerH, setContainerH] = useState(WIN_H - 140);
-
   const listRef = useRef<FlatList<Article>>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await fetchArticlesByIds(savedIds);
-      setItems(data);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load saved items');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [savedIds]);
+  const { items, loading, refreshing, error, onRefresh, hardReload } =
+    useSaved({ savedIds, reloadVersion: rv });
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      load();
-    }, [load])
-  );
-
+  // прокрутить в начало при жёстком reload (когда loading снова true)
   useEffect(() => {
-    if (!loading) load();
-  }, [savedIds]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (loading) listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [loading]);
 
   const onOpen = (item: Article) => navigation.navigate('Article', { item });
-  const onRefresh = () => {
-    setRefreshing(true);
-    load();
-  };
 
-  // Скелетоны при первичной загрузке
+  // Скелетоны во весь экран
   if (loading) {
-    const skHeight = containerH || WIN_H - 140;
+    const h = containerH || WIN_H - 140;
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
         <FlatList
           data={savedIds.length ? [0, 1] : []}
           keyExtractor={(i) => `sk-${i}`}
-          renderItem={() => <SkeletonCard height={skHeight} />}
-          snapToInterval={skHeight}
+          renderItem={() => <SkeletonCard height={h} />}
+          snapToInterval={h}
           decelerationRate="fast"
           pagingEnabled
           showsVerticalScrollIndicator={false}
-          getItemLayout={(_, index) => ({ length: skHeight, offset: skHeight * index, index })}
+          getItemLayout={(_, i) => ({ length: h, offset: h * i, index: i })}
           style={{ backgroundColor: c.bg }}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={[styles.emptyTitle, { color: c.subtext }]}>
-                You have no saved cards yet.
-              </Text>
-            </View>
-          }
+          ListEmptyComponent={<Empty text="You have no saved cards yet." color={c.subtext} />}
         />
       </SafeAreaView>
     );
@@ -96,9 +60,9 @@ export default function SavedScreen({ navigation }: any) {
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
       >
         {error ? (
-          <View style={styles.error}>
-            <Text style={[styles.errorText, { color: '#ff5252' }]}>Ошибка: {error}</Text>
-          </View>
+          <Text style={[styles.errorText, { color: '#ff5252', textAlign: 'center', paddingVertical: 8 }]}>
+            Ошибка: {error}
+          </Text>
         ) : null}
 
         {items.length ? (
@@ -109,7 +73,7 @@ export default function SavedScreen({ navigation }: any) {
             renderItem={({ item }) => (
               <QCard
                 item={item}
-                height={containerH}          // ← как в Home, «страничная» прокрутка
+                height={containerH}
                 onOpen={onOpen}
                 saved={savedIds.includes(item.id)}
                 onToggleSave={toggleSaved}
@@ -119,28 +83,29 @@ export default function SavedScreen({ navigation }: any) {
             decelerationRate="fast"
             pagingEnabled
             showsVerticalScrollIndicator={false}
-            getItemLayout={(_, index) => ({ length: containerH, offset: containerH * index, index })}
+            getItemLayout={(_, i) => ({ length: containerH, offset: containerH * i, index: i })}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            ListFooterComponent={
-              refreshing ? <ActivityIndicator style={{ paddingVertical: 16 }} /> : null
-            }
+            ListFooterComponent={refreshing ? <ActivityIndicator style={{ paddingVertical: 16 }} /> : null}
             style={{ backgroundColor: c.bg }}
           />
         ) : (
-          <View style={styles.empty}>
-            <Text style={[styles.emptyTitle, { color: c.subtext }]}>
-              You have no saved cards yet.
-            </Text>
-          </View>
+          <Empty text="You have no saved cards yet." color={c.subtext} />
         )}
       </View>
     </SafeAreaView>
   );
 }
 
+function Empty({ text, color }: { text: string; color: string }) {
+  return (
+    <View style={styles.empty}>
+      <Text style={[styles.emptyTitle, { color }]}>{text}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   emptyTitle: { fontSize: 16 },
-  error: { paddingVertical: 8, alignItems: 'center' },
   errorText: { fontSize: 14 },
 });
