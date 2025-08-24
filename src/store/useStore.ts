@@ -1,3 +1,4 @@
+// src/store/useStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +22,10 @@ interface StoreState {
 
   theme: ThemeMode;
   setTheme: (t: ThemeMode) => void;
+
+  // Офлайн (ручной тумблер)
+  offlineOverride: boolean;
+  setOfflineOverride: (v: boolean) => void;
 
   // Dev/QA: форс-обновление экранов (не сохраняется)
   reloadVersion: number;
@@ -59,7 +64,11 @@ export const useStore = create<StoreState>()(
       theme: 'light',
       setTheme: (t) => set({ theme: t }),
 
-      // --- Dev/QA reload (эпhemeral) ---
+      // --- Офлайн тумблер ---
+      offlineOverride: false,
+      setOfflineOverride: (v) => set({ offlineOverride: v }),
+
+      // --- Dev/QA reload (ephemeral) ---
       reloadVersion: 0,
       forceReload: () => set((s) => ({ reloadVersion: s.reloadVersion + 1 })),
     }),
@@ -73,6 +82,7 @@ export const useStore = create<StoreState>()(
         savedIds: s.savedIds,
         fontSize: s.fontSize,
         theme: s.theme,
+        offlineOverride: s.offlineOverride,
       }),
     }
   )

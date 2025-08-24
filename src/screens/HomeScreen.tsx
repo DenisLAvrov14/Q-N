@@ -43,7 +43,7 @@ export default function HomeScreen({ navigation }: any) {
   const toggleSaved     = useStore((s) => s.toggleSaved);
   const rv              = useStore((s) => s.reloadVersion);
 
-  // “Применённые” темы (по ним реально грузим ленту)
+  // “Применённые” темы — по ним реально грузим ленту
   const [appliedTopics, setAppliedTopics] = useState<string[]>(selectedTopics);
 
   const [containerH, setContainerH] = useState(WIN_H - 140);
@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }: any) {
   // Диагностика Directus
   const { status: healthApi, raw: healthRaw } = useDirectusHealth(BASE_URL);
 
-  // Лента: грузим по appliedTopics, а не по selectedTopics
+  // Лента: грузим по appliedTopics
   const {
     items, loading, loadingMore, refreshing, error,
     onRefresh: feedRefresh, onEndReached,
@@ -63,7 +63,7 @@ export default function HomeScreen({ navigation }: any) {
     enableAutoRefresh: false, // фильтры применяем вручную
   });
 
-  // Помощник: изменились ли фильтры (UI vs applied)
+  // Сравнение фильтров (UI vs applied)
   const filtersChanged = useMemo(() => {
     const a = selectedTopics.join('|');
     const b = appliedTopics.join('|');
@@ -78,15 +78,27 @@ export default function HomeScreen({ navigation }: any) {
   const onChipPress = (slug: string) => {
     if (slug === 'all' || slug === '__clear') clearTopics();
     else toggleTopic(slug);
-    // ВНИМАНИЕ: ничего не грузим и не скроллим – ждём pull-to-refresh
+    // Не грузим сразу — ждём pull-to-refresh
   };
 
-  // Применяем фильтры по pull-to-refresh
-  const onApplyFilters = useCallback(() => {
-    setAppliedTopics(selectedTopics); // сменится параметр у useFeed → он сам перезагрузится
-    // можно дополнительно прокрутить наверх, если хочешь:
-    // listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [selectedTopics]);
+  // ЕДИНАЯ функция refresh:
+  // - если фильтры менялись — применяем их и скроллим к началу
+  // - всегда триггерим рефетч, чтобы корректно отработал спиннер
+  const handleRefresh = useCallback(() => {
+    // защита от повторных жестов, пока идёт refresh
+    if (refreshing || loading) return;
+
+    if (filtersChanged) {
+      setAppliedTopics(selectedTopics);
+      // скроллим мгновенно, чтобы не дёргать UX
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToOffset({ offset: 0, animated: false });
+      });
+    }
+
+    // ВАЖНО: всегда вызываем реальный рефетч из хука
+    feedRefresh();
+  }, [filtersChanged, selectedTopics, feedRefresh, refreshing, loading]);
 
   const openArticle = (a: Article) => navigation.navigate('Article', { item: a });
 
@@ -123,7 +135,7 @@ export default function HomeScreen({ navigation }: any) {
         bgColor={c.bg}
       />
 
-      {/* Подсказка применять фильтры свайпом вниз */}
+      {/* Подсказка про pull-to-refresh только если фильтры менялись */}
       {filtersChanged && (
         <View style={[styles.hint, { borderColor: c.border, backgroundColor: c.surface }]}>
           <Text style={[styles.hintText, { color: c.subtext }]}>
@@ -158,7 +170,7 @@ export default function HomeScreen({ navigation }: any) {
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
-                onRefresh={onApplyFilters} // ← применяем фильтры жестом вниз
+                onRefresh={handleRefresh}  // ← фикс залипания
               />
             }
             ListFooterComponent={

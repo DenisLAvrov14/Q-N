@@ -1,13 +1,17 @@
+// src/screens/Settings.tsx
 import React from 'react';
 import { SafeAreaView, ScrollView, View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import Constants from 'expo-constants';
 import { useStore } from '../store/useStore';
 import { useThemeColors } from '../theme';
+import { useConnectivity } from '../hooks/useConnectivity';
 
 export default function SettingsScreen() {
   const c = useThemeColors();
 
-  const [offline, setOffline] = React.useState(false); // demo
+  // Store-backed prefs
+  const offline = useStore((s) => s.offlineOverride);
+  const setOffline = useStore((s) => s.setOfflineOverride);
   const fontSize = useStore((s) => s.fontSize);
   const setFontSize = useStore((s) => s.setFontSize);
   const theme = useStore((s) => s.theme);
@@ -17,6 +21,9 @@ export default function SettingsScreen() {
   const forceReload = useStore((s) => s.forceReload);
   const isDev = __DEV__ || ((Constants.expoConfig as any)?.extra?.env === 'dev');
 
+  // Connectivity (for status text)
+  const { isOffline, reason } = useConnectivity();
+
   const extra: any =
     (Constants.expoConfig?.extra as any) ||
     ((Constants as any).manifest?.extra as any) ||
@@ -24,9 +31,16 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version ?? '0.1';
   const directusUrl: string | undefined = extra?.DIRECTUS_URL;
 
+  // pretty status
+  const connText =
+    isOffline
+      ? reason === 'override'
+        ? 'Offline (forced)'
+        : 'Offline (no internet)'
+      : 'Online';
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-      {/* paddingTop побольше, чтобы визуально опустить содержимое */}
       <ScrollView contentContainerStyle={[styles.container, { backgroundColor: c.bg, paddingTop: 32 }]}>
         <Text style={[styles.h1, { color: c.text }]}>Settings</Text>
 
@@ -72,27 +86,24 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* Offline (demo) */}
-        <View style={[styles.rowCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Text style={[styles.label, { color: c.text }]}>Simulate offline mode</Text>
-          <Switch value={offline} onValueChange={setOffline} />
+        {/* Offline (override) */}
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <View style={[styles.row, { marginBottom: 8 }]}>
+            <Text style={[styles.label, { color: c.text }]}>Simulate offline mode</Text>
+            <Switch value={offline} onValueChange={setOffline} />
+          </View>
+          <Text style={[styles.metaRow, { color: c.subtext }]}>Status: {connText}</Text>
+          <Text style={[styles.metaRow, { color: c.subtext }]}>
+            When forced offline, feed loads from the last cached page (if available).
+          </Text>
         </View>
 
         {/* Dev tools (only in dev) */}
         {isDev && (
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: c.surface,
-                borderColor: c.border,
-              },
-            ]}
-          >
+          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
             <Text style={[styles.sub, { color: c.text }]}>Developer Tools</Text>
             <Text style={[styles.devRow, { color: c.subtext }]}>
-              Directus URL:{' '}
-              <Text style={[styles.mono, { color: c.text }]}>{directusUrl || '— not set —'}</Text>
+              Directus URL: <Text style={[styles.mono, { color: c.text }]}>{directusUrl || '— not set —'}</Text>
             </Text>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
               <Pressable onPress={forceReload} style={[styles.btn, { backgroundColor: c.ctaBg }]}>
@@ -120,6 +131,7 @@ const styles = StyleSheet.create({
   h1: { fontSize: 22, fontWeight: '700' },
 
   card: { padding: 14, borderWidth: 1, borderRadius: 14, gap: 10 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowCard: {
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -148,6 +160,8 @@ const styles = StyleSheet.create({
   btnText: { fontWeight: '700' },
 
   meta: { fontSize: 12, marginTop: 8, textAlign: 'center' },
+
+  metaRow: { fontSize: 12, lineHeight: 16 },
 
   // dev
   devRow: { fontSize: 12, lineHeight: 16 },
