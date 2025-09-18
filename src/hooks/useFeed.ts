@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Article } from '../types';
-import { fetchFeed } from '../api';
+import { fetchFeed } from '../api/api';
 import { useConnectivity } from './useConnectivity';
 
 type Params = {
@@ -9,6 +9,8 @@ type Params = {
   pageSize: number;
   reloadVersion?: number;
   enableAutoRefresh?: boolean;
+  /** Не очищать список при перезагрузке (для мягкого UI-обновления) */
+  keepItemsWhileReloading?: boolean;
 };
 
 export function useFeed({
@@ -16,6 +18,7 @@ export function useFeed({
   pageSize,
   reloadVersion = 0,
   enableAutoRefresh = true,
+  keepItemsWhileReloading = false,
 }: Params) {
   const { isOffline } = useConnectivity();
 
@@ -62,7 +65,7 @@ export function useFeed({
         setError(null);
         setHasMore(data.length === pageSize);
         setPage(pageToLoad);
-        setItems((prev) => (replace ? data : [...prev, ...data]));
+        setItems(prev => (replace ? data : [...prev, ...data]));
 
         // кэшируем только первую страницу (как «последний фид»)
         if (pageToLoad === 1) {
@@ -94,11 +97,12 @@ export function useFeed({
   // первичная загрузка / смена фильтров / force reload
   useEffect(() => {
     setLoading(true);
-    setItems([]);
+    if (!keepItemsWhileReloading) {
+      setItems([]); // ← только если нужна «жёсткая» перезагрузка
+    }
     setHasMore(true);
     load(1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey, reloadVersion]);
+  }, [cacheKey, reloadVersion, keepItemsWhileReloading]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

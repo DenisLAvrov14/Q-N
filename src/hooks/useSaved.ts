@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppForeground } from './useAppForeground';
-import { fetchArticlesByIds } from '../api';
+import { fetchArticlesByIds } from '../api/api';
 import type { Article } from '../types';
 
 export function useSaved({
@@ -15,7 +15,7 @@ export function useSaved({
   autoRefresh?: boolean;
 }) {
   const [items, setItems] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);        // первичная/жёсткая загрузка
+  const [loading, setLoading] = useState(true); // первичная/жёсткая загрузка
   const [refreshing, setRefreshing] = useState(false); // мягкий pull-to-refresh
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +33,7 @@ export function useSaved({
       const data = await fetchArticlesByIds(savedIds);
       // сохранить исходный порядок savedIds
       const order = new Map(savedIds.map((id, i) => [id, i]));
-      const sorted = [...data].sort((a, b) => (order.get(a.id)! - order.get(b.id)!));
+      const sorted = [...data].sort((a, b) => order.get(a.id)! - order.get(b.id)!);
       if (reqId === reqIdRef.current) setItems(sorted);
     } catch (e: any) {
       if (reqId === reqIdRef.current) setError(e?.message ?? 'Failed to load saved items');
@@ -63,8 +63,14 @@ export function useSaved({
   }, [reloadVersion, hardReload]);
 
   // refocus + foreground авто-рефреш
-  useFocusEffect(useCallback(() => { hardReload(); }, [hardReload]));
-  useAppForeground(() => { if (autoRefresh && !loading && !refreshing) onRefresh(); });
+  useFocusEffect(
+    useCallback(() => {
+      hardReload();
+    }, [hardReload])
+  );
+  useAppForeground(() => {
+    if (autoRefresh && !loading && !refreshing) onRefresh();
+  });
 
   return { items, loading, refreshing, error, onRefresh, hardReload };
 }

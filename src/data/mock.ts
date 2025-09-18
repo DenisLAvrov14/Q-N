@@ -59,7 +59,8 @@ export const CARDS: Article[] = [
     topic: 'space',
     body1:
       'Planets have tangential velocity from the Solar System’s formation. Gravity constantly pulls them inward toward the Sun.',
-    body2: 'Because their sideways speed is just right, they perpetually fall around the Sun rather than straight in.',
+    body2:
+      'Because their sideways speed is just right, they perpetually fall around the Sun rather than straight in.',
     source1: 'https://solarsystem.nasa.gov/basics/chapter3-1/',
   },
   {
@@ -71,8 +72,7 @@ export const CARDS: Article[] = [
     topic: 'history',
     body1:
       'Earlier media included bamboo, silk, papyrus, and parchment, each limited by cost or durability.',
-    body2:
-      'Paper’s spread along trade routes reshaped administration, education, and literature.',
+    body2: 'Paper’s spread along trade routes reshaped administration, education, and literature.',
     source1: 'https://www.britannica.com/technology/paper',
   },
   {
@@ -82,8 +82,10 @@ export const CARDS: Article[] = [
     excerpt:
       'Transistor miniaturization packs more on chips, boosting performance and efficiency — but gains face limits.',
     topic: 'tech',
-    body1: 'For decades, manufacturers shrank transistors with improved lithography, tracking Moore’s law.',
-    body2: 'At nanoscales, quantum effects and heat make further shrinking hard; new architectures emerge.',
+    body1:
+      'For decades, manufacturers shrank transistors with improved lithography, tracking Moore’s law.',
+    body2:
+      'At nanoscales, quantum effects and heat make further shrinking hard; new architectures emerge.',
     source1: 'https://en.wikipedia.org/wiki/Moore%27s_law',
   },
 ];

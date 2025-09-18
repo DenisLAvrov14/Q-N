@@ -9,8 +9,8 @@ import { useStore } from '../store/useStore';
  * - Онлайновые всплески сглаживаем небольшой задержкой (анти-дребезг)
  */
 export function useConnectivity() {
-  const override = useStore((s) => s.offlineOverride);
-  const setOverride = useStore((s) => s.setOfflineOverride); // для Settings
+  const override = useStore(s => s.offlineOverride);
+  const setOverride = useStore(s => s.setOfflineOverride); // для Settings
   const [sysOnline, setSysOnline] = useState(true);
 
   // debounce: оффлайн применяем мгновенно, онлайн — с небольшой задержкой

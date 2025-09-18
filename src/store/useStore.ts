@@ -37,47 +37,47 @@ export const useStore = create<StoreState>()(
     (set, get) => ({
       // --- Фильтры тем ---
       selectedTopics: [],
-      toggleTopic: (slug) =>
-        set((state) => {
+      toggleTopic: slug =>
+        set(state => {
           if (slug === 'all') return { selectedTopics: [] };
           const next = new Set(state.selectedTopics);
           next.has(slug) ? next.delete(slug) : next.add(slug);
           return { selectedTopics: Array.from(next) };
         }),
       clearTopics: () => set({ selectedTopics: [] }),
-      setOnlyTopics: (slugs) =>
-        set({ selectedTopics: Array.from(new Set(slugs.filter((s) => s !== 'all'))) }),
+      setOnlyTopics: slugs =>
+        set({ selectedTopics: Array.from(new Set(slugs.filter(s => s !== 'all'))) }),
 
       // --- Избранное ---
       savedIds: [],
-      toggleSaved: (id) =>
-        set((s) => ({
+      toggleSaved: id =>
+        set(s => ({
           savedIds: s.savedIds.includes(id)
-            ? s.savedIds.filter((x) => x !== id)
+            ? s.savedIds.filter(x => x !== id)
             : [...s.savedIds, id],
         })),
 
       // --- UI ---
       fontSize: 16,
-      setFontSize: (n) => set({ fontSize: Math.min(22, Math.max(14, Math.round(n))) }),
+      setFontSize: n => set({ fontSize: Math.min(22, Math.max(14, Math.round(n))) }),
 
       theme: 'light',
-      setTheme: (t) => set({ theme: t }),
+      setTheme: t => set({ theme: t }),
 
       // --- Офлайн тумблер ---
       offlineOverride: false,
-      setOfflineOverride: (v) => set({ offlineOverride: v }),
+      setOfflineOverride: v => set({ offlineOverride: v }),
 
       // --- Dev/QA reload (ephemeral) ---
       reloadVersion: 0,
-      forceReload: () => set((s) => ({ reloadVersion: s.reloadVersion + 1 })),
+      forceReload: () => set(s => ({ reloadVersion: s.reloadVersion + 1 })),
     }),
     {
       name: 'qa-swipe-v1',
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       // сохраняем только нужные поля (reloadVersion не попадает в persist)
-      partialize: (s) => ({
+      partialize: s => ({
         selectedTopics: s.selectedTopics,
         savedIds: s.savedIds,
         fontSize: s.fontSize,

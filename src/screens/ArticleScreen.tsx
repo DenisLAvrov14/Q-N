@@ -1,34 +1,32 @@
 // src/screens/Article.tsx
-import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Linking,
-  Share,
-} from 'react-native';
+import React, { useEffect } from 'react';
+import { ScrollView, View, Text, StyleSheet, Pressable, Linking, Share } from 'react-native';
 import { useThemeColors } from '../theme';
 import { useStore } from '../store/useStore';
-import type { Article } from '../types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
+import { useRead } from '../hooks/useRead';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type Props = {
-  navigation: any;
-  route: { params: { item: Article } };
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'Article'>;
 
 export default function ArticleScreen({ route }: Props) {
   const c = useThemeColors();
   const { item } = route.params;
 
-  const fontSize   = useStore((s) => s.fontSize);
-  const savedIds   = useStore((s) => s.savedIds);
-  const toggleSave = useStore((s) => s.toggleSaved);
+  const fontSize = useStore(s => s.fontSize);
+  const savedIds = useStore(s => s.savedIds);
+  const toggleSave = useStore(s => s.toggleSaved);
+
+  const { markRead } = useRead(); // ← добавили
+
+  // Помечаем статью прочитанной при открытии экрана
+  useEffect(() => {
+    markRead(item.id, item.topicSlug ?? 'general');
+  }, [item.id, item.topicSlug, markRead]);
 
   const isSaved = savedIds.includes(item.id);
-  const bodyLH  = Math.round(fontSize * 1.5);
+  const bodyLH = Math.round(fontSize * 1.5);
 
   const onShare = async () => {
     try {
@@ -51,10 +49,8 @@ export default function ArticleScreen({ route }: Props) {
         contentContainerStyle={[styles.container, { backgroundColor: c.bg }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
         <Text style={[styles.title, { color: c.text }]}>{item.title}</Text>
 
-        {/* Action row */}
         <View style={styles.row}>
           <Pressable
             onPress={() => toggleSave(item.id)}
@@ -70,12 +66,10 @@ export default function ArticleScreen({ route }: Props) {
           </Pressable>
         </View>
 
-        {/* Excerpt (эпиграф) */}
         {item.excerpt ? (
           <Text style={[styles.excerpt, { color: c.subtext }]}>{item.excerpt}</Text>
         ) : null}
 
-        {/* Body */}
         {item.body1 ? (
           <Text style={[styles.body, { color: c.text, fontSize, lineHeight: bodyLH }]}>
             {item.body1}
@@ -88,13 +82,12 @@ export default function ArticleScreen({ route }: Props) {
           </Text>
         ) : null}
 
-        {/* Sources */}
         {(item.source1 || item.source2) && (
           <View style={[styles.sources, { borderTopColor: c.border }]}>
             <Text style={[styles.sourcesTitle, { color: c.subtext }]}>Sources</Text>
 
             {item.source1 ? (
-              <Pressable onPress={() => openSource(item.source1)}>
+              <Pressable onPress={() => openSource(item.source1!)}>
                 <Text style={[styles.link, { color: c.ctaBg }]} numberOfLines={1}>
                   {item.source1}
                 </Text>
@@ -102,7 +95,7 @@ export default function ArticleScreen({ route }: Props) {
             ) : null}
 
             {item.source2 ? (
-              <Pressable onPress={() => openSource(item.source2)}>
+              <Pressable onPress={() => openSource(item.source2!)}>
                 <Text style={[styles.link, { color: c.ctaBg }]} numberOfLines={1}>
                   {item.source2}
                 </Text>
@@ -111,7 +104,6 @@ export default function ArticleScreen({ route }: Props) {
           </View>
         )}
 
-        {/* Bottom spacer */}
         <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>

@@ -10,22 +10,22 @@ export default function DevTools() {
   if (!isDev) return null;
 
   const extra: any =
-    (Constants.expoConfig?.extra as any) ||
-    ((Constants as any).manifest?.extra as any) ||
-    {};
+    (Constants.expoConfig?.extra as any) || ((Constants as any).manifest?.extra as any) || {};
   const baseUrl: string | undefined = extra?.DIRECTUS_URL;
 
-  const forceReload = useStore((s) => s.forceReload);
+  const forceReload = useStore(s => s.forceReload);
   const { status, raw } = useDirectusHealth(baseUrl);
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>Developer Tools</Text>
-      <Text style={styles.row}>Directus URL: <Text style={styles.mono}>{baseUrl || '—'}</Text></Text>
-      <Text style={styles.row}>Health: <Text style={styles.mono}>{status}</Text></Text>
-      {status !== 'ok' && !!raw && (
-        <Text style={[styles.row, styles.dim]}>[{raw}]</Text>
-      )}
+      <Text style={styles.row}>
+        Directus URL: <Text style={styles.mono}>{baseUrl || '—'}</Text>
+      </Text>
+      <Text style={styles.row}>
+        Health: <Text style={styles.mono}>{status}</Text>
+      </Text>
+      {status !== 'ok' && !!raw && <Text style={[styles.row, styles.dim]}>[{raw}]</Text>}
       <View style={{ height: 8 }} />
       <Button title="Force reload" onPress={forceReload} />
     </View>

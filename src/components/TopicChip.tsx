@@ -1,49 +1,31 @@
-// src/components/TopicChip.tsx
 import React, { memo } from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
 import { useThemeColors } from '../theme';
 
 type Props = {
   label: string;
   active?: boolean;
-  onPress?: () => void;
+  onPress: () => void;
   disabled?: boolean;
-  testID?: string;
-  style?: ViewStyle | ViewStyle[];
 };
 
-function TopicChip({ label, active, onPress, disabled, testID, style }: Props) {
+function TopicChip({ label, active = false, onPress, disabled }: Props) {
   const c = useThemeColors();
+
+  const bg = active ? c.badgeBg : 'transparent';
+  const border = active ? c.badgeBg : c.border;
+  const text = active ? c.badgeText : c.text;
 
   return (
     <Pressable
-      testID={testID}
       onPress={onPress}
       disabled={disabled}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityState={{ selected: !!active, disabled: !!disabled }}
-      accessibilityLabel={`${label}${active ? ', selected' : ''}`}
-      android_ripple={{ color: active ? c.badgeBg : c.border, borderless: false }}
       style={({ pressed }) => [
         styles.base,
-        {
-          borderColor: active ? c.ctaBg : c.border,
-          backgroundColor: active ? c.ctaBg : 'transparent',
-          opacity: disabled ? 0.5 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
-        },
-        style,
+        { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.5 : pressed ? 0.9 : 1 },
       ]}
     >
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.text,
-          { color: active ? c.ctaText : c.text },
-          active && styles.textActive,
-        ]}
-      >
+      <Text style={[styles.label, { color: text }]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -55,14 +37,16 @@ export default memo(TopicChip);
 const styles = StyleSheet.create({
   base: {
     height: 36,
-    minWidth: 44,
     paddingHorizontal: 12,
     borderRadius: 10,
-    borderWidth: 1,
-    marginRight: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginRight: 8,
   },
-  text: { fontSize: 14 },
-  textActive: { fontWeight: '600' },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    maxWidth: 220,
+  },
 });

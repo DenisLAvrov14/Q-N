@@ -27,3 +27,6 @@ cms/database/
 cms/*.db
 cms/*.sqlite
 node_modules
+
+# Prettier
+.prettierignore

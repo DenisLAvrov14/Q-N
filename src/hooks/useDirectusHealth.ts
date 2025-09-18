@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { pingDirectus } from '../api';
+import { pingDirectus } from '../api/api';
 
 export type HealthStatus = 'pending' | 'ok' | 'fail';
 
@@ -12,29 +12,49 @@ export function useDirectusHealth(baseUrl: string | undefined) {
     (async () => {
       if (!baseUrl) {
         if (!cancelled) {
-          setRaw('no_base_url');
+          setRaw('⚠️ no_base_url');
           setStatus('fail');
         }
         return;
       }
 
-      // 1) сырой пинг /server/health (для диагностики)
+      const cleanUrl = baseUrl.replace(/\/$/, '');
+
+      // 1) Сырой пинг /server/health (для диагностики)
       try {
-        const res = await fetch(`${baseUrl.replace(/\/$/, '')}/server/health`);
+        const res = await fetch(`${cleanUrl}/server/health`);
         const txt = await res.text();
-        if (!cancelled) setRaw(`${res.status}:${txt.slice(0, 120)}`);
+        if (!cancelled) {
+          if (res.ok) {
+            setRaw(`health: ${txt}`); // покажем "health: {"status":"ok"}"
+          } else {
+            setRaw(`http ${res.status}: ${txt}`);
+          }
+        }
       } catch (e: any) {
-        if (!cancelled) setRaw(`ERR:${e?.message || 'Network request failed'}`);
+        if (!cancelled) {
+          setRaw(`network error: ${e?.message || 'failed'}`);
+          setStatus('fail');
+        }
+        return;
       }
 
-      // 2) pingDirectus из api (проверка токена/рестов)
+      // 2) pingDirectus (REST API + токен)
       try {
         const ok = await pingDirectus();
-        if (!cancelled) setStatus(ok ? 'ok' : 'fail');
-      } catch {
-        if (!cancelled) setStatus('fail');
+        if (!cancelled) {
+          setStatus(ok ? 'ok' : 'fail');
+          if (ok) setRaw('✅ API ok');
+          else setRaw('❌ API fail');
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setStatus('fail');
+          setRaw(`❌ API error: ${e?.message || 'unknown'}`);
+        }
       }
     })();
+
     return () => {
       cancelled = true;
     };

@@ -6,7 +6,11 @@ export function SkeletonLine({
   h = 16,
   w = '100%',
   r = 8,
-}: { h?: number; w?: DimensionValue; r?: number }) {
+}: {
+  h?: number;
+  w?: DimensionValue;
+  r?: number;
+}) {
   const c = useThemeColors();
   const lineStyle: ViewStyle = {
     height: h,

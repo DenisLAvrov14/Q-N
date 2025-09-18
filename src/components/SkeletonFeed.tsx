@@ -44,7 +44,7 @@ export function SkeletonFeed({
 
       <FlatList
         data={[0, 1, 2]}
-        keyExtractor={(i) => `sk-${i}`}
+        keyExtractor={i => `sk-${i}`}
         renderItem={() => <SkeletonCard height={skHeight} />}
         snapToInterval={skHeight}
         decelerationRate="fast"
